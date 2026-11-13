@@ -2,8 +2,13 @@ import streamlit as st
 from api_utils import upload_document, list_documents, delete_document
 
 def display_sidebar():
+    if st.sidebar.button("Start New Chat"):
+        st.session_state.messages = []
+        st.session_state.session_id = None
+        st.rerun()
+
     # Model selection
-    model_options = ["llama-3.1-8b-instant"]
+    model_options = ["openai/gpt-oss-20b"]
     st.sidebar.selectbox("Select Model", options=model_options, key="model")
 
     # Document upload

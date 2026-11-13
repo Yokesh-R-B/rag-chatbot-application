@@ -4,10 +4,10 @@ from langchain_huggingface.embeddings import HuggingFaceEmbeddings
 from langchain_chroma import Chroma
 from typing import List
 from langchain_core.documents import Document
-from dotenv import load_dotenv
-import os
+import logging
+from settings import CHROMA_PATH
 
-load_dotenv()  # loads variables from .env
+logger = logging.getLogger(__name__)
 
 
 embedding_function = HuggingFaceEmbeddings(
@@ -26,7 +26,7 @@ text_splitter = RecursiveCharacterTextSplitter(
 
 # Chroma vector store
 vectorstore = Chroma(
-    persist_directory="./chroma_db",
+    persist_directory=str(CHROMA_PATH),
     embedding_function=embedding_function
 )
 
@@ -52,16 +52,35 @@ def index_document_to_chroma(file_path: str, file_id: int) -> bool:
 
         vectorstore.add_documents(splits)
         return True
-    except Exception as e:
-        print(f"Error indexing document: {e}")
+    except Exception:
+        logger.exception("Error indexing document %s", file_path)
+        try:
+            vectorstore._collection.delete(where={"file_id": file_id})
+        except Exception:
+            logger.exception("Failed to clean up partial vectors for document %s", file_id)
         return False
 
 def delete_doc_from_chroma(file_id: int):
     try:
         vectorstore._collection.delete(where={"file_id": file_id})
         return True
-    except Exception as e:
-        print(f"Error deleting: {e}")
+    except Exception:
+        logger.exception("Error deleting vectors for document %s", file_id)
         return False
+
+def remove_orphaned_vectors(document_ids: set[int]) -> None:
+    try:
+        stored = vectorstore._collection.get(include=["metadatas"])
+        orphaned_ids = {
+            metadata.get("file_id")
+            for metadata in stored.get("metadatas", [])
+            if metadata and metadata.get("file_id") not in document_ids
+        }
+        for file_id in orphaned_ids:
+            if file_id is not None:
+                delete_doc_from_chroma(file_id)
+                logger.info("Removed orphaned vectors for document %s", file_id)
+    except Exception:
+        logger.exception("Failed to reconcile orphaned document vectors")
 
 retriever = vectorstore.as_retriever(search_kwargs={"k": 2})

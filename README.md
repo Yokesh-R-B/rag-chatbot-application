@@ -1,80 +1,62 @@
-# RAG Chatbot (FastAPI + Streamlit)
+# RAG Chatbot
 
-This is a simple RAG (Retrieval-Augmented Generation) chatbot where users can upload documents (PDF, DOCX, HTML) and ask questions from them.
-The backend is built using **FastAPI**, and the frontend uses **Streamlit**.
-ChromaDB is used to store embeddings, and Groq LLaMA 3.1 is used for answering questions.
+A document question-answering application built with FastAPI, Streamlit,
+ChromaDB, and Groq LLaMA. Users can upload PDF, DOCX, and HTML files, ask
+questions, and continue conversations with session history.
 
-## Features
+## Configuration
 
-* Upload documents and store them in a local ChromaDB
-* Ask questions based on uploaded content
-* Follow-up questions supported
-* Chat history stored in SQLite
-* API routes built using FastAPI
-* Simple Streamlit UI
+Copy `.env.example` to `.env` and set `GROQ_API_KEY`. The application stores
+SQLite and ChromaDB data in `DATA_DIR`; use a persistent volume for deployments.
+`MAX_UPLOAD_BYTES` defaults to 25 MiB. Set `ALLOWED_ORIGINS` and `API_BASE_URL`
+for the URLs used by your deployment.
 
-## Setup Instructions
+## Local development
 
-### **1. Clone the repository**
-
-```bash
-git clone https://github.com/<your-username>/<repo-name>.git
-cd <repo-name>
-```
-
-### **2. Create virtual environment**
-
-```bash
-python -m venv venv
-venv\Scripts\activate   # Windows
-```
-
-### **3. Install dependencies**
-
-```bash
+```powershell
+python -m venv .venv
+.venv\Scripts\Activate.ps1
 pip install -r requirements.txt
+Copy-Item .env.example .env
 ```
 
-### **4. Add your API keys**
+Start the API:
 
-Create a `.env` file:
-
-```
-GROQ_API_KEY=your_groq_key
-LANGCHAIN_API_KEY=your_langchain_key
-LANGCHAIN_TRACING_V2=true
-LANGCHAIN_PROJECT=RAG_Chatbot
+```powershell
+Push-Location api
+python -m uvicorn main:app --host 127.0.0.1 --port 8000 --reload
+Pop-Location
 ```
 
-## Running the Project
+In another terminal, start the UI:
 
-### **Start Backend**
+```powershell
+$env:API_BASE_URL = "http://localhost:8000"
+python -m streamlit run app/streamlit_app.py
+```
+
+The API health endpoint is `http://localhost:8000/health` and interactive
+documentation is available at `/docs`.
+
+## Docker deployment
+
+The included Compose file runs both services and persists application data in
+the `rag-data` volume:
 
 ```bash
-cd api
-python -m uvicorn main:app --reload
+docker compose up --build -d
 ```
 
-Backend runs at:
+Open the UI at `http://localhost:8501`. For production, put the UI and API
+behind a TLS-terminating reverse proxy, provide secrets through the platform's
+secret manager, and back up the persistent `rag-data` volume. The default API
+container uses one worker because the local SQLite/Chroma storage is
+file-backed; scale out only after moving those stores to shared services.
 
-```
-http://127.0.0.1:8000/docs
-```
+## API endpoints
 
-### **Start Frontend**
-
-Open a new terminal:
-
-```bash
-cd frontend
-streamlit run app.py
-```
-
-## What I Learned
-
-* How RAG works end-to-end
-* Using different LLM models with LangChain
-* Storing embeddings using ChromaDB
-* Building endpoints with FastAPI
-* Creating a frontend using Streamlit
-
+* `GET /health` - liveness check
+* `POST /chat` - answer a question using the configured RAG model
+* `POST /upload-doc` - upload and index a supported document
+* `GET /list-docs` - list indexed documents
+* `POST /delete-doc` - remove a document and its vectors

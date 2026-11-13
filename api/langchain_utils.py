@@ -39,7 +39,7 @@ qa_prompt = ChatPromptTemplate.from_messages([
 def format_docs(docs):
     return "\n\n".join([doc.page_content for doc in docs])
 
-def get_rag_chain(model="llama-3.1-8b-instant"):
+def get_rag_chain(model="openai/gpt-oss-20b"):
     llm = ChatGroq(model=model)
 
     # Reformulate Question

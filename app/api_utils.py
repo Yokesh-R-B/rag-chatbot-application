@@ -1,5 +1,9 @@
 import requests
 import streamlit as st
+import os
+
+API_BASE_URL = os.getenv("API_BASE_URL", "http://localhost:8000").rstrip("/")
+REQUEST_TIMEOUT = (10, 120)
 
 def get_api_response(question, session_id, model):
     headers = {'accept': 'application/json', 'Content-Type': 'application/json'}
@@ -8,7 +12,7 @@ def get_api_response(question, session_id, model):
         data["session_id"] = session_id
 
     try:
-        response = requests.post("http://localhost:8000/chat", headers=headers, json=data)
+        response = requests.post(f"{API_BASE_URL}/chat", headers=headers, json=data, timeout=REQUEST_TIMEOUT)
         if response.status_code == 200:
             return response.json()
         else:
@@ -21,7 +25,7 @@ def get_api_response(question, session_id, model):
 def upload_document(file):
     try:
         files = {"file": (file.name, file, file.type)}
-        response = requests.post("http://localhost:8000/upload-doc", files=files)
+        response = requests.post(f"{API_BASE_URL}/upload-doc", files=files, timeout=REQUEST_TIMEOUT)
         if response.status_code == 200:
             return response.json()
         else:
@@ -33,7 +37,7 @@ def upload_document(file):
 
 def list_documents():
     try:
-        response = requests.get("http://localhost:8000/list-docs")
+        response = requests.get(f"{API_BASE_URL}/list-docs", timeout=REQUEST_TIMEOUT)
         if response.status_code == 200:
             return response.json()
         else:
@@ -48,7 +52,7 @@ def delete_document(file_id):
     data = {"file_id": file_id}
 
     try:
-        response = requests.post("http://localhost:8000/delete-doc", headers=headers, json=data)
+        response = requests.post(f"{API_BASE_URL}/delete-doc", headers=headers, json=data, timeout=REQUEST_TIMEOUT)
         if response.status_code == 200:
             return response.json()
         else:
