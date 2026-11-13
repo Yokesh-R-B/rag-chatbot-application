@@ -2,7 +2,11 @@ import requests
 import streamlit as st
 import os
 
-API_BASE_URL = os.getenv("API_BASE_URL", "http://localhost:8000").rstrip("/")
+try:
+    API_BASE_URL = st.secrets.get("API_BASE_URL", os.getenv("API_BASE_URL", "http://localhost:8000"))
+except FileNotFoundError:
+    API_BASE_URL = os.getenv("API_BASE_URL", "http://localhost:8000")
+API_BASE_URL = API_BASE_URL.rstrip("/")
 REQUEST_TIMEOUT = (10, 120)
 
 def get_api_response(question, session_id, model):

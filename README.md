@@ -16,7 +16,7 @@ for the URLs used by your deployment.
 ```powershell
 python -m venv .venv
 .venv\Scripts\Activate.ps1
-pip install -r requirements.txt
+pip install -r requirements-api.txt
 Copy-Item .env.example .env
 ```
 
@@ -52,6 +52,14 @@ behind a TLS-terminating reverse proxy, provide secrets through the platform's
 secret manager, and back up the persistent `rag-data` volume. The default API
 container uses one worker because the local SQLite/Chroma storage is
 file-backed; scale out only after moving those stores to shared services.
+
+### Streamlit Community Cloud
+
+Deploy `app/streamlit_app.py` as the **Main file path**. The frontend uses the
+small `requirements.txt` file and does not install the backend ML dependencies.
+Configure `API_BASE_URL` as a Streamlit secret or environment
+variable pointing to a publicly reachable API deployment; `localhost` only
+works when the API runs on the same machine.
 
 ## API endpoints
 
