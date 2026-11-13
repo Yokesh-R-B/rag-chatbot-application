@@ -1,7 +1,7 @@
 # RAG Chatbot
 
 A document question-answering application built with FastAPI, Streamlit,
-ChromaDB, and Groq LLaMA. Users can upload PDF, DOCX, and HTML files, ask
+ChromaDB, and Groq-hosted language models. Users can upload PDF, DOCX, and HTML files, ask
 questions, and continue conversations with session history.
 
 ## Configuration
